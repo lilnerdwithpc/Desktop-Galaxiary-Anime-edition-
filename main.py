@@ -17,9 +17,10 @@ class RigElement:
         self.c1 = c1 if c1 is not None else QVector3D()
         self.rotation = rotation if rotation is not None else QQuaternion()
 
+        self._object_position = QVector3D()
         self._world_position = QVector3D()
-        self.parent = None
-        self.childs = []
+        self.parent:RigElement = None
+        self.childs:list[RigElement] = []
 
     def add_child(self, child:'RigElement'):
         # TODO: add_child should only be performed once for each child. else it malfunctions, and i wont fix it. why? because yes. why todo? because i might fix it sometime.
@@ -94,8 +95,13 @@ class Rig:
         self.RightLowerLeg.add_child(self.RightFoot)
         self.LeftLowerLeg.add_child(self.LeftFoot)
 
-    def update_world_position(self):
-        pass
+    def update_object_position(self):
+        self.Root._object_position = QVector3D()
+        def _recurve(rig_element:RigElement):
+            for child in rig_element.childs:
+                child._object_position = rig_element._object_position + child.rotation.rotatedVector(child.c0)
+                _recurve(child)     
+        _recurve(self.Root)
 
     def get_layout(self):
         layout:dict[RigElement,dict] = {self.Root : {}}
@@ -116,7 +122,6 @@ class Rig:
                 _recurve(v, depth+1)
         _recurve(layout, 0)
         return layout_str
-
 
 class DesktopGalaxiary(QWidget):
     def __init__(self, args):
