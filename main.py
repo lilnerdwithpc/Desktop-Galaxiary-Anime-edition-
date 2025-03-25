@@ -99,8 +99,8 @@ class Rig:
         self.Root._object_position = QVector3D()
         def _recurve(rig_element:RigElement):
             for child in rig_element.childs:
-                child._object_position = rig_element._object_position + child.rotation.rotatedVector(child.c0)
-                _recurve(child)     
+                child._object_position = rig_element._object_position + child.c0 + child.rotation.rotatedVector(rig_element.c0)
+                _recurve(child)
         _recurve(self.Root)
 
     def get_layout(self):
