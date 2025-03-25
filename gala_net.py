@@ -73,6 +73,20 @@ class Network(nn.Module):
         x = self.fc2(x)
         x = F.relu(x)
         x = torch.cat((x, prev), dim=1)
+        #region
+        #                                        ,_     _
+        #  omg cat                               |\\_,-~/
+        #          _..---...,""-._     ,/}/)     / _  _ |    ,--.
+        #       .''        ,      ``..'(/-<     (  @  @ )   / ,-'
+        #      /   _      {      )         \     \  _T_/-._( (
+        #     ;   _ `.     `.   <         a(     /         `. \
+        #   ,'   ( \  )      `.  \ __.._ .: y   |         _  \ |            cat.
+        #  (  <\_-) )'-.____...\  `._   //-'s    \ \ ,  /      |
+        #   `. `-' /-._)))      `-._)))           || |-_\__   /
+        #     `...'                              ((_/`(____,-'
+        #  omg torch.cat() 
+        #
+        #endregion
         x = self.hist(x.unsqueeze(1)) # Add unsqueeze to make it 3D
         h = self.fc_action(action)
         h = F.relu(h)
