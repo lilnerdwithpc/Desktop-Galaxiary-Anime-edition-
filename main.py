@@ -56,25 +56,25 @@ class Rig:
         self.Root = RigElement('Root')
 
         self.UpperTorso = RigElement('UpperTorso')
-        self.LowerTorso = RigElement('LowerTorso')
+        self.LowerTorso = RigElement('LowerTorso', c0=QVector3D(0, 168, 0))
 
-        self.Head = RigElement('Head')
+        self.Head = RigElement('Head', c0=QVector3D(0, -58, 0))
 
-        self.LeftUpperArm = RigElement('LeftUpperArm')
-        self.LeftLowerArm = RigElement('LeftLowerArm')
-        self.LeftHand = RigElement('LeftHand')
+        self.LeftUpperArm = RigElement('LeftUpperArm', c0=QVector3D(110, 0, 0))
+        self.LeftLowerArm = RigElement('LeftLowerArm', c0=QVector3D(0, 140, 0))
+        self.LeftHand = RigElement('LeftHand', c0=QVector3D(0, 140, 0))
 
-        self.RightUpperArm = RigElement('RightUpperArm')
-        self.RightLowerArm = RigElement('RightLowerArm')
-        self.RightHand = RigElement('RightHand')
+        self.RightUpperArm = RigElement('RightUpperArm', c0=QVector3D(-110, 0, 0))
+        self.RightLowerArm = RigElement('RightLowerArm', c0=QVector3D(0, 140, 0))
+        self.RightHand = RigElement('RightHand', c0=QVector3D(0, 140, 0))
 
-        self.LeftUpperLeg = RigElement('LeftUpperLeg')
-        self.LeftLowerLeg = RigElement('LeftLowerLeg')
-        self.LeftFoot = RigElement('LeftFoot')
+        self.LeftUpperLeg = RigElement('LeftUpperLeg', c0=QVector3D(55, 169, 0))
+        self.LeftLowerLeg = RigElement('LeftLowerLeg', c0=QVector3D(0, 143, 0))
+        self.LeftFoot = RigElement('LeftFoot', c0=QVector3D(0, 143, 0))
 
-        self.RightUpperLeg = RigElement('RightUpperLeg')
-        self.RightLowerLeg = RigElement('RightLowerLeg')
-        self.RightFoot = RigElement('RightFoot')
+        self.RightUpperLeg = RigElement('RightUpperLeg', c0=QVector3D(-55, 169, 0))
+        self.RightLowerLeg = RigElement('RightLowerLeg', c0=QVector3D(0, 143, 0))
+        self.RightFoot = RigElement('RightFoot', c0=QVector3D(0, 143, 0))
 
         # Connect the rig elements
         self.Root.add_child(self.UpperTorso)
@@ -94,6 +94,9 @@ class Rig:
         self.RightLowerLeg.add_child(self.RightFoot)
         self.LeftLowerLeg.add_child(self.LeftFoot)
 
+    def update_world_position(self):
+        pass
+
     def get_layout(self):
         layout:dict[RigElement,dict] = {self.Root : {}}
         def _recurve(rig_element:RigElement, childs_dict:dict):
@@ -109,25 +112,26 @@ class Rig:
         def _recurve(layout_sect:dict[RigElement,dict], depth:int):
             nonlocal layout_str
             for k, v in layout_sect.items():
-                layout_str += '|   '*depth + k.name + '\n'
+                layout_str += '\033[38;5;235m|\033[0m   '*depth + k.name + '\n'
                 _recurve(v, depth+1)
         _recurve(layout, 0)
         return layout_str
 
-    
-
-rig = Rig(QVector2D())
-print(rig.get_layout_string())
 
 class DesktopGalaxiary(QWidget):
     def __init__(self, args):
         super().__init__()
         self.args = args
 
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
-        self.setAttribute(Qt.WA_TranslucentBackground)  # Transparent background
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)  # Click-through window
-        self.showFullScreen()  # Full screen overlay
+        self.rig = Rig(QVector2D())
+
+        #self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        #self.setAttribute(Qt.WA_TranslucentBackground)  # Transparent background
+        #self.setAttribute(Qt.WA_TransparentForMouseEvents)  # Click-through window
+        #self.showFullScreen()  # Full screen overlay
+
+        self.setStyleSheet("background-color: black;")
+        self.show()
 
         self.setup_update_timers()
 
