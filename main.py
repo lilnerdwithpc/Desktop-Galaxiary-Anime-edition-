@@ -18,6 +18,7 @@ class RigElement:
         self.rotation = rotation if rotation is not None else QQuaternion()
 
         self._object_position = QVector3D()
+        self._object_rotation = QQuaternion()
         self._world_position = QVector3D()
         self.parent:RigElement = None
         self.childs:list[RigElement] = []
@@ -34,7 +35,7 @@ class RigElement:
             child.parent = self
 
 class Rig:
-    def __init__(self, pos:QVector2D):
+    def __init__(self, position:QVector3D, scale:float):
         '''
         - Root
             - UpperTorso
@@ -77,6 +78,12 @@ class Rig:
         self.RightLowerLeg = RigElement('RightLowerLeg', c0=QVector3D(0, 143, 0))
         self.RightFoot = RigElement('RightFoot', c0=QVector3D(0, 143, 0))
 
+
+        self.Root._world_position = position
+        self.position = self.Root._world_position
+        self.rotation = self.Root.rotation
+        self.scale = scale
+
         # Connect the rig elements
         self.Root.add_child(self.UpperTorso)
         
@@ -95,11 +102,13 @@ class Rig:
         self.RightLowerLeg.add_child(self.RightFoot)
         self.LeftLowerLeg.add_child(self.LeftFoot)
 
-    def update_object_position(self):
-        self.Root._object_position = QVector3D()
+    def update_position(self):
         def _recurve(rig_element:RigElement):
             for child in rig_element.childs:
-                child._object_position = rig_element._object_position + child.c0 + child.rotation.rotatedVector(rig_element.c0)
+                child._object_rotation = child.rotation * rig_element._object_rotation
+                child._object_position = rig_element._object_position + rig_element._object_rotation.rotatedVector(child.c0)*self.scale
+                
+                child._world_position = self.Root._world_position + self.Root.rotation.rotatedVector(child._object_position) + child.rotation.rotatedVector(child.c1)*self.scale
                 _recurve(child)
         _recurve(self.Root)
 
@@ -128,7 +137,7 @@ class DesktopGalaxiary(QWidget):
         super().__init__()
         self.args = args
 
-        self.rig = Rig(QVector2D())
+        self.rig = Rig(QVector3D(100, 100, 0), 0.3)
 
         #self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         #self.setAttribute(Qt.WA_TranslucentBackground)  # Transparent background
@@ -182,9 +191,33 @@ class DesktopGalaxiary(QWidget):
             painter.drawRect(int(-length/2), int(-radius), int(length), int(scale))  # Centered rectangle
             painter.restore()
 
-        global idk
+        def _draw_rig(rig:Rig):
+            rig.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 1, 0), 1)
+            rig.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 1.1)
+            rig.LeftUpperArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 1.3)
+            rig.LeftLowerArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 1)
+            rig.LeftUpperLeg.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 1)
+            rig.LeftLowerLeg.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 1)
+            def _recurve(rig_element:RigElement):
+                """ Recursively draw all rig elements """
+                for child in rig_element.childs:
+                    start = QPoint(int(child._world_position.x()), int(child._world_position.y()))
+                    end = QPoint(int(rig_element._world_position.x()), int(rig_element._world_position.y()))
+                    _draw_joint(start, end, int(rig.scale*100))  # Adjust scale as needed
+                    _recurve(child)  # Recurse
+            root = rig.Root
+            _recurve(root)
+
+        # Update rig world positions before drawing
+        self.rig.update_position()
+
+        # Set color for joints
         painter.setBrush(QColor(255, 221, 158, 255))
-        _draw_joint(QPoint(100, 200), QPoint(300+idk, 300), 30)
+
+        # Draw the rig starting from the root
+        _draw_rig(self.rig)
+
+        painter.end()
     
 
 
