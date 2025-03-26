@@ -186,7 +186,11 @@ class Rig:
 
         # Setup Drawables
         self.LeftUpperArm.drawable = Drawable([
-            Cylinder(delta_position=QVector3D(0, 0, 0), delta_rotation=QQuaternion.fromEulerAngles(-90, 0, 0), scale=self.scale*QVector3D(80, 140, 80), color=QColor(255, 0, 0, 255))
+            Cylinder(
+                delta_position=QVector3D(0, 0, 0), 
+                delta_rotation=QQuaternion.fromEulerAngles(-90, 0, 0), 
+                scale=self.scale*QVector3D(80, 140, 80), 
+                color=QColor(255, 0, 0, 255))
         ])
 
     def update_position(self):
@@ -276,7 +280,7 @@ class DesktopGalaxiary(QWidget):
         self.rig.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 1, 0), 1)
         self.rig.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 0.6)
         self.rig.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 0.16)
-        # self.rig.LeftUpperArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 3)
+        self.rig.LeftUpperArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 3)
         #self.rig.LeftLowerArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 1.3)
         self.update()  # Trigger repaint
 
