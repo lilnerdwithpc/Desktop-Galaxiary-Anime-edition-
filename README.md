@@ -1,1 +1,2 @@
-if u read this u gay
+Desktop Galaxiary - Anime Edition
+Inspired by Desktop Goose
