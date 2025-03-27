@@ -4,31 +4,31 @@ import copy
 from PyQt5.QtGui import QPainter, QColor, QVector2D, QVector3D, QQuaternion
 from PyQt5.QtCore import QPoint, QPointF, QRectF
 
-from typing import Protocol
-
-class ObjectLike(Protocol):
-    delta_position: QVector3D
-    delta_rotation:QQuaternion
-    scale:QVector3D
-    color:QColor
-
-    def draw(self, painter: QPainter, position: QVector3D, rotation: QQuaternion) -> None:
-        pass
-
-class Cylinder:
-    def __init__(self, delta_position:QVector3D, delta_rotation:QQuaternion, scale:QVector3D, color:QColor):
+class ObjectLike:
+    def __init__(self, delta_position:QVector3D, delta_rotation:QQuaternion, scale:QVector3D, color:QColor) -> None:
         self.delta_position = delta_position
         self.delta_rotation = delta_rotation
         self.scale = scale
         self.color = color
-        
-    def draw(self, painter: QPainter, position: QVector3D, rotation: QQuaternion):
-        # Calculate global position and rotation
-        rot = rotation * self.delta_rotation
-        pos = position + rot.rotatedVector(self.delta_position)
+        self.position = None
+        self.rotation = None
 
+    def update(self, position: QVector3D, rotation: QQuaternion) -> None:
+        # Calculate global position and rotation
+        self.rotation = rotation * self.delta_rotation
+        self.position = position + self.rotation.rotatedVector(self.delta_position)
+        
+    def draw(self, painter: QPainter) -> None:
+        pass
+
+class Cylinder(ObjectLike):
+    def draw(self, painter: QPainter):
+        '''
+        Draws the object using current position and rotation.
+        Make sure to update position and rotation with updatePosition()
+        '''
         # Compute the rotated X-axis – this gives the orientation of the object in the XY plane.
-        rotated_x = rot.rotatedVector(QVector3D(0, 1, 0))
+        rotated_x = self.rotation.rotatedVector(QVector3D(0, 1, 0))
         angle_cam = math.degrees(math.atan2(rotated_x.y(), rotated_x.x()))
         rotated_x_projected_unit = min(math.hypot(rotated_x.x(), rotated_x.y()), 1) # To prevent float's dark magic making it larger than 1.
 
@@ -36,7 +36,7 @@ class Cylinder:
         painter.setBrush(self.color)
 
         # Translate to the cylinder's position (using x, y from the QVector3D)
-        painter.translate(pos.x(), pos.y())
+        painter.translate(self.position.x(), self.position.y())
         painter.rotate(angle_cam)
         
         # Define dimensions based on scale:
@@ -60,20 +60,14 @@ class Cylinder:
         
         painter.restore()
 
-class Capsule:
-    def __init__(self, delta_position:QVector3D, delta_rotation:QQuaternion, scale:QVector3D, color:QColor):
-        self.delta_position = delta_position
-        self.delta_rotation = delta_rotation
-        self.scale = scale
-        self.color = color
-        
-    def draw(self, painter: QPainter, position: QVector3D, rotation: QQuaternion):
-        # Calculate global position and rotation
-        rot = rotation * self.delta_rotation
-        pos = position + rot.rotatedVector(self.delta_position)
-
+class Capsule(ObjectLike):
+    def draw(self, painter: QPainter):
+        '''
+        Draws the object using current position and rotation.
+        Make sure to update position and rotation with updatePosition()
+        '''
         # Compute the rotated X-axis – this gives the orientation of the object in the XY plane.
-        rotated_x = rot.rotatedVector(QVector3D(0, 1, 0))
+        rotated_x = self.rotation.rotatedVector(QVector3D(0, 1, 0))
         angle_cam = math.degrees(math.atan2(rotated_x.y(), rotated_x.x()))
         rotated_x_projected_unit = min(math.hypot(rotated_x.x(), rotated_x.y()), 1) # To prevent float's dark magic making it larger than 1.
 
@@ -81,7 +75,7 @@ class Capsule:
         painter.setBrush(self.color)
 
         # Translate to the cylinder's position (using x, y from the QVector3D)
-        painter.translate(pos.x(), pos.y())
+        painter.translate(self.position.x(), self.position.y())
         painter.rotate(angle_cam)
         
         # Define dimensions based on scale:
@@ -103,21 +97,15 @@ class Capsule:
         
         painter.restore()
 
-class Sphere:
-    def __init__(self, delta_position:QVector3D, delta_rotation:QQuaternion, scale:QVector3D, color:QColor):
-        self.delta_position = delta_position
-        self.delta_rotation = delta_rotation
-        self.scale = scale
-        self.color = color
-        
-    def draw(self, painter: QPainter, position: QVector3D, rotation: QQuaternion):
-        # Calculate global position and rotation
-        rot = rotation * self.delta_rotation
-        pos = position + rot.rotatedVector(self.delta_position)
-
+class Sphere(ObjectLike):
+    def draw(self, painter: QPainter):
+        '''
+        Draws the object using current position and rotation.
+        Make sure to update position and rotation with updatePosition()
+        '''
         radius = min(self.scale.x(), self.scale.y(), self.scale.z()) / 2
 
         painter.save()
         painter.setBrush(self.color)
-        painter.drawEllipse(QPointF(pos.x(), pos.y()), radius, radius)
+        painter.drawEllipse(QPointF(self.position.x(), self.position.y()), radius, radius)
         painter.restore()

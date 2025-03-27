@@ -5,19 +5,19 @@ import copy
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QPainter, QColor, QVector2D, QVector3D, QQuaternion
 from PyQt5.QtCore import Qt, QTimer, QPoint, QPointF, QRectF
-import drawableObjects
+import drawableObjects as dObj
 
 
 class Drawable:
     '''
     Container for group of drawableObjects to be drawn
     '''
-    def __init__(self, objects:list[drawableObjects.ObjectLike]):
+    def __init__(self, objects:list[dObj.ObjectLike]):
         self.objects = objects
 
-    def draw(self, painter:QPainter, position:QVector3D, rotation:QQuaternion):
+    def update(self, position:QVector3D, rotation:QQuaternion):
         for object in self.objects:
-            object.draw(painter, position, rotation)
+            object.update(position, rotation)
 
 class RigElement:
     def __init__(self, name:str, c0:QVector3D=None, c1:QVector3D=None, rotation:QQuaternion=None, drawable:Drawable=None):
@@ -46,12 +46,12 @@ class RigElement:
             self.childs.append(child)
             child.parent = self
 
-    def draw(self, painter:QPainter):
+    def updateDrawables(self):
         '''
-        Draws the RigElement using current metadata.
+        Update Drawables using current metadata
         '''
         if self.drawable:
-            self.drawable.draw(painter, self._world_position, self._world_rotation)
+            self.drawable.update(self._world_position, self._world_rotation)
 
 class Rig:
     def __init__(self, position:QVector3D, scale:float):
@@ -113,39 +113,74 @@ class Rig:
             'lavender': QColor(99, 61, 144, 255),
             'hair': QColor(66, 30, 99, 255)
         }
-        self.LeftUpperArm.drawable = Drawable([
-            drawableObjects.Capsule(
-                delta_position=QVector3D(0, 70, 0), 
-                delta_rotation=QQuaternion(),
-                scale=QVector3D(80, 140, 80), 
-                color=_color_pallete['shirt']
-                ),
-        ])
-        self.RightUpperArm.drawable = Drawable([
-            drawableObjects.Capsule(
-                delta_position=QVector3D(0, 70, 0), 
-                delta_rotation=QQuaternion(),
-                scale=QVector3D(80, 140, 80), 
-                color=_color_pallete['shirt']
-                ),
-        ])
 
-        self.LeftUpperLeg.drawable = Drawable([
-            drawableObjects.Capsule(
+        # LeftArm
+        #region
+        self.LeftUpperArm.drawable = Drawable([
+            dObj.Capsule(
                 delta_position=QVector3D(0, 70, 0), 
                 delta_rotation=QQuaternion(),
                 scale=QVector3D(80, 140, 80), 
-                color=_color_pallete['pant']
-                ),
+                color=_color_pallete['shirt']
+            ),
         ])
-        self.LeftLowerLeg.drawable = Drawable([
-            drawableObjects.Capsule(
+        self.LeftLowerArm.drawable = Drawable([
+            dObj.Cylinder(
                 delta_position=QVector3D(0, 70, 0), 
                 delta_rotation=QQuaternion(),
                 scale=QVector3D(80, 140, 80), 
-                color=_color_pallete['pant']
-                ),
+                color=_color_pallete['shirt']
+            ),
+            dObj.Cylinder(
+                delta_position=QVector3D(0, 110, 0), 
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(94, 60, 94), 
+                color=_color_pallete['shirt']
+            )
         ])
+        self.LeftHand.drawable = Drawable([
+            dObj.Sphere(
+                delta_position=QVector3D(0, 20, 0),
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(90, 90, 90), 
+                color=_color_pallete['skin']
+            )
+        ])
+        #endregion
+
+        # RightArm
+        #region
+        self.RightUpperArm.drawable = Drawable([
+            dObj.Capsule(
+                delta_position=QVector3D(0, 70, 0), 
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(80, 140, 80), 
+                color=_color_pallete['shirt']
+            ),
+        ])
+        self.RightLowerArm.drawable = Drawable([
+            dObj.Cylinder(
+                delta_position=QVector3D(0, 70, 0), 
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(80, 140, 80), 
+                color=_color_pallete['shirt']
+            ),
+            dObj.Cylinder(
+                delta_position=QVector3D(0, 110, 0), 
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(94, 60, 94), 
+                color=_color_pallete['shirt']
+            )
+        ])
+        self.RightHand.drawable = Drawable([
+            dObj.Sphere(
+                delta_position=QVector3D(0, 20, 0),
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(90, 90, 90), 
+                color=_color_pallete['skin']
+            )
+        ])
+        #endregion
 
 
         for element in self.get_elements():
@@ -168,6 +203,35 @@ class Rig:
                 _recurse(child)
         _recurse(self.Root)
 
+    def updateDrawables(self):
+        '''
+        Update Drawables in each RigElement using current metadata
+        '''
+        elements = self.get_elements()
+        for rig_element in elements:
+            rig_element.updateDrawables()
+
+    def draw(self, painter:QPainter):
+        '''
+        Draw the Rig.
+        '''
+        # Update Drawables before drawing
+        self.updateDrawables()
+
+        # Get and sort dobjs by what should be in front of what
+        dobjs = self.get_drawable_objects()
+        dobjs.sort(key=lambda v: v.position.z(), reverse=True)
+        for o in dobjs:
+            o.draw(painter)
+
+    def get_drawable_objects(self) -> list[dObj.ObjectLike]:
+        dobjs = []
+        elements = self.get_elements()
+        for rig_element in elements:
+            if rig_element.drawable:
+                dobjs.extend(rig_element.drawable.objects)
+        return dobjs
+
     def get_elements(self) -> list[RigElement]:
         '''
         Returns a iterable over all element in Rig
@@ -179,12 +243,6 @@ class Rig:
                 _recurse(child)
         _recurse(self.Root)
         return elements
-    
-    def draw(self, painter:QPainter):
-        elements = self.get_elements()
-        elements.sort(key=lambda v: v._world_position.z(), reverse=True)
-        for rig_element in elements:
-            rig_element.draw(painter)
 
     def get_layout_dict(self):
         '''
@@ -242,13 +300,13 @@ class DesktopGalaxiary(QWidget):
         self.rig.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 0.6)
         self.rig.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(0, 0, 1), 0.16)
         self.rig.LeftUpperArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 3)
-        #self.rig.LeftLowerArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 1.3)
+        self.rig.LeftLowerArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 1)
+        self.rig.RightUpperArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 1.7)
+        self.rig.RightLowerArm.rotation *= QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 0.8)
         self.update()  # Trigger repaint
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        if not painter.isActive():  # Ensure painter is active
-            return
         
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
@@ -280,7 +338,7 @@ class DesktopGalaxiary(QWidget):
             ae = 40
             for rig_element in elements:
                 ae += 14
-                painter.setBrush(QColor(0, ae, 0, 255)) 
+                painter.setBrush(QColor(255-ae, ae, 0, 255)) 
                 start = QPointF(rig_element._world_position.x(), rig_element._world_position.y())
                 end = rig_element._world_rotation.rotatedVector(QVector3D(0, 7, 0))
                 end = start + QPointF(end.x(), end.y())
