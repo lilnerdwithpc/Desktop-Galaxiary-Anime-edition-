@@ -7,9 +7,6 @@ from PyQt5.QtCore import QPoint, QPointF, QRectF
 from typing import Protocol
 
 class ObjectLike(Protocol):
-    '''
-    Ohio sigma GYATT skibidi. DOP DOP YES YES
-    '''
     delta_position: QVector3D
     delta_rotation:QQuaternion
     scale:QVector3D

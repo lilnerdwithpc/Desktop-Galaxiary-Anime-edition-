@@ -52,28 +52,9 @@ class RigElement:
         '''
         if self.drawable:
             self.drawable.draw(painter, self._world_position, self._world_rotation)
-           
 
 class Rig:
     def __init__(self, position:QVector3D, scale:float):
-        '''
-        - Root
-            - UpperTorso
-                - Head
-                - LeftUpperArm
-                    - LeftLowerArm
-                        - LeftHand
-                - RightUpperArm
-                    - RightLowerArm
-                        - RightHand
-                - LowerTorso
-                    - LeftUpperLeg
-                        - LeftLowerLeg
-                            - LeftFoot
-                    - RightUpperLeg
-                        - RightLowerLeg
-                            - RightFoot
-        '''
         # Create the erm rig elements
         self.Root = RigElement('Root')
 
@@ -82,7 +63,7 @@ class Rig:
 
         self.Head = RigElement('Head', c0=QVector3D(0, -58, 0))
 
-        self.LeftUpperArm = RigElement('LeftUpperArm', c0=QVector3D(110, 0, 0), c1=QVector3D(0, 70, 0))
+        self.LeftUpperArm = RigElement('LeftUpperArm', c0=QVector3D(110, 0, 0))
         self.LeftLowerArm = RigElement('LeftLowerArm', c0=QVector3D(0, 140, 0))
         self.LeftHand = RigElement('LeftHand', c0=QVector3D(0, 140, 0))
 
@@ -125,20 +106,47 @@ class Rig:
 
 
         # Setup Drawables
+        _color_pallete = {
+            'skin': QColor(255, 231, 220, 255),
+            'shirt': QColor(68, 64, 63, 255),
+            'pant': QColor(61, 59, 62, 255),
+            'lavender': QColor(99, 61, 144, 255),
+            'hair': QColor(66, 30, 99, 255)
+        }
         self.LeftUpperArm.drawable = Drawable([
-            drawableObjects.Cylinder(
-                delta_position=QVector3D(0, 0, 0), 
+            drawableObjects.Capsule(
+                delta_position=QVector3D(0, 70, 0), 
                 delta_rotation=QQuaternion(),
-                scale=QVector3D(100, 140, 100), 
-                color=QColor(255, 0, 0, 255)
+                scale=QVector3D(80, 140, 80), 
+                color=_color_pallete['shirt']
                 ),
-            drawableObjects.Sphere(
-                delta_position=QVector3D(0, -70, 0),
-                delta_rotation=QQuaternion(),
-                scale=QVector3D(100, 100, 100),
-                color=QColor(255, 0, 0, 255)
-            )
         ])
+        self.RightUpperArm.drawable = Drawable([
+            drawableObjects.Capsule(
+                delta_position=QVector3D(0, 70, 0), 
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(80, 140, 80), 
+                color=_color_pallete['shirt']
+                ),
+        ])
+
+        self.LeftUpperLeg.drawable = Drawable([
+            drawableObjects.Capsule(
+                delta_position=QVector3D(0, 70, 0), 
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(80, 140, 80), 
+                color=_color_pallete['pant']
+                ),
+        ])
+        self.LeftLowerLeg.drawable = Drawable([
+            drawableObjects.Capsule(
+                delta_position=QVector3D(0, 70, 0), 
+                delta_rotation=QQuaternion(),
+                scale=QVector3D(80, 140, 80), 
+                color=_color_pallete['pant']
+                ),
+        ])
+
 
         for element in self.get_elements():
             if element.drawable:
@@ -162,7 +170,7 @@ class Rig:
 
     def get_elements(self) -> list[RigElement]:
         '''
-        Returns a list containing all element in Rig
+        Returns a iterable over all element in Rig
         '''
         elements = []
         def _recurse(rig_element:RigElement):
@@ -244,58 +252,46 @@ class DesktopGalaxiary(QWidget):
         
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
-        
-        def _draw_joint(a:QPoint, b:QPoint, scale:int):
+
+        def _draw_rig_bones(rig:Rig):
             '''
-            Draws two circles at both ends, and a rectangle connecting them
+            Draw the rig's bones ig
             '''
-            radius = scale // 2
+            def _draw_joint(a:QPoint, b:QPoint, scale:int):
+                '''
+                Draws a rectangle connecting a and b
+                '''
+                radius = scale // 2
 
-            # Draw circles at both ends
-            painter.drawEllipse(a.x() - radius, a.y() - radius, scale, scale)
-            painter.drawEllipse(b.x() - radius, b.y() - radius, scale, scale)
+                # Draw rotated rectangle
+                painter.save()
+                mid = (QPointF(a) + QPointF(b)) / 2  # Compute center point
+                delta = b - a
+                length = math.hypot(delta.x(), delta.y())
+                angle = math.degrees(math.atan2(delta.y(), delta.x()))  # Correct angle calculation
 
-            # Draw rotated rectangle
-            painter.save()
-            mid = (QPointF(a) + QPointF(b)) / 2  # Compute center point
-            delta = b - a
-            length = math.hypot(delta.x(), delta.y())
-            angle = math.degrees(math.atan2(delta.y(), delta.x()))  # Correct angle calculation
-
-            painter.translate(mid)  # Move origin to center
-            painter.rotate(angle)  # Rotate to match line direction
-            painter.drawRect(int(-length/2), int(-radius), int(length), int(scale))  # Centered rectangle
-            painter.restore()
-
-        def _draw_quad(a:QPoint, b:QPoint, c:QPoint, d:QPoint, scale:int):
-            _draw_joint(a, b, scale)
-            _draw_joint(b, c, scale)
-            _draw_joint(c, d, scale)
-            _draw_joint(d, a, scale)
-
-        def _draw_rig(rig:Rig):
-            '''
-            Draw all elements in Rig
-            '''
+                painter.translate(mid)  # Move origin to center
+                painter.rotate(angle)  # Rotate to match line direction
+                painter.drawRect(int(-length/2), int(-radius), int(length), int(scale))  # Centered rectangle
+                painter.restore()
+            
             elements = rig.get_elements()
             elements.sort(key=lambda v: v._world_position.z(), reverse=True)
             ae = 40
             for rig_element in elements:
                 ae += 14
-                painter.setBrush(QColor(ae, ae, 0, 255)) 
-                start = QPoint(int(rig_element._world_position.x()), int(rig_element._world_position.y()))
-                end = QPoint(int(rig_element.parent._world_position.x()), int(rig_element.parent._world_position.y()))
-                _draw_joint(start, end, int(rig.scale*80))  # Adjust scale as needed
+                painter.setBrush(QColor(0, ae, 0, 255)) 
+                start = QPointF(rig_element._world_position.x(), rig_element._world_position.y())
+                end = rig_element._world_rotation.rotatedVector(QVector3D(0, 7, 0))
+                end = start + QPointF(end.x(), end.y())
+                painter.drawEllipse(start, 2, 2)
+                _draw_joint(start, end, 2)  # Adjust scale as needed
 
         # Update rig world positions before drawing
         self.rig.update_position()
 
-        # Set color for joints
-        painter.setBrush(QColor(255, 221, 158, 255))
-
-        # Draw the rig starting from the root
-        _draw_rig(self.rig)
         self.rig.draw(painter)
+        _draw_rig_bones(self.rig)
 
         painter.end()
     
