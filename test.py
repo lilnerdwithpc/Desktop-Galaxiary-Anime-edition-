@@ -2,9 +2,6 @@ from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QPainter, QColor, QVector2D, QVector3D, QQuaternion
 from PyQt5.QtCore import Qt, QTimer, QPoint, QPointF
 
-a = QVector3D()
+a = QVector3D(3, 4, 5)
 
-b = a
-b.setX(5)
-
-print(a)
+print(min(a))
