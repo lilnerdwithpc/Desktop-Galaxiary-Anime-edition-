@@ -93,9 +93,7 @@ class Capsule:
 
         # Ohio pre-calculation of skibidi.
         morphed_length_rect = length * rotated_x_projected_unit
-        morphed_length_elipse = diameter * (1 - rotated_x_projected_unit**2)**0.5
         morphed_length_rect_over_2 = morphed_length_rect / 2
-        morphed_length_elipse_over_2 = morphed_length_elipse / 2
 
         morphed_length_rect = int(morphed_length_rect)
         morphed_length_rect_over_2 = int(morphed_length_rect_over_2)
@@ -103,8 +101,8 @@ class Capsule:
         # Draw the shapes (a central rectangle and ellipses at the ends)
         #painter.drawRect(-400, -1, 800, 2)
         painter.drawRect(-morphed_length_rect_over_2, -diameter // 2, morphed_length_rect, diameter)
-        painter.drawEllipse(QPointF(morphed_length_rect_over_2, 0), morphed_length_elipse_over_2, diameter / 2)
-        painter.drawEllipse(QPointF(-morphed_length_rect_over_2, 0), morphed_length_elipse_over_2, diameter / 2)
+        painter.drawEllipse(QPointF(morphed_length_rect_over_2, 0), diameter/2, diameter / 2)
+        painter.drawEllipse(QPointF(-morphed_length_rect_over_2, 0), diameter/2, diameter / 2)
         
         painter.restore()
 
