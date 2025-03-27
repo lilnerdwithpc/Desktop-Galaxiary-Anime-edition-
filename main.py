@@ -269,6 +269,40 @@ class Rig:
                 _recurse(v, depth+1)
         _recurse(layout, 0)
         return layout_str
+    
+    def draw_bones(self, painter:QPainter):
+        '''
+        Draw the rig's bones ig
+        '''
+        def _draw_line(a:QPoint, b:QPoint, scale:int):
+            '''
+            Draws a rectangle connecting a and b
+            '''
+            radius = scale // 2
+
+            # Draw rotated rectangle
+            painter.save()
+            mid = (QPointF(a) + QPointF(b)) / 2  # Compute center point
+            delta = b - a
+            length = math.hypot(delta.x(), delta.y())
+            angle = math.degrees(math.atan2(delta.y(), delta.x()))  # Correct angle calculation
+
+            painter.translate(mid)  # Move origin to center
+            painter.rotate(angle)  # Rotate to match line direction
+            painter.drawRect(int(-length/2), int(-radius), int(length), int(scale))  # Centered rectangle
+            painter.restore()
+        
+        elements = self.get_elements()
+        elements.sort(key=lambda v: v._world_position.z(), reverse=True)
+        ae = 40
+        for rig_element in elements:
+            ae += 14
+            painter.setBrush(QColor(255-ae, ae, 0, 255)) 
+            start = QPointF(rig_element._world_position.x(), rig_element._world_position.y())
+            end = rig_element._world_rotation.rotatedVector(QVector3D(0, 7, 0))
+            end = start + QPointF(end.x(), end.y())
+            painter.drawEllipse(start, 2, 2)
+            _draw_line(start, end, 2)  # Adjust scale as needed
 
 class DesktopGalaxiary(QWidget):
     def __init__(self, args):
@@ -311,45 +345,11 @@ class DesktopGalaxiary(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
 
-        def _draw_rig_bones(rig:Rig):
-            '''
-            Draw the rig's bones ig
-            '''
-            def _draw_joint(a:QPoint, b:QPoint, scale:int):
-                '''
-                Draws a rectangle connecting a and b
-                '''
-                radius = scale // 2
-
-                # Draw rotated rectangle
-                painter.save()
-                mid = (QPointF(a) + QPointF(b)) / 2  # Compute center point
-                delta = b - a
-                length = math.hypot(delta.x(), delta.y())
-                angle = math.degrees(math.atan2(delta.y(), delta.x()))  # Correct angle calculation
-
-                painter.translate(mid)  # Move origin to center
-                painter.rotate(angle)  # Rotate to match line direction
-                painter.drawRect(int(-length/2), int(-radius), int(length), int(scale))  # Centered rectangle
-                painter.restore()
-            
-            elements = rig.get_elements()
-            elements.sort(key=lambda v: v._world_position.z(), reverse=True)
-            ae = 40
-            for rig_element in elements:
-                ae += 14
-                painter.setBrush(QColor(255-ae, ae, 0, 255)) 
-                start = QPointF(rig_element._world_position.x(), rig_element._world_position.y())
-                end = rig_element._world_rotation.rotatedVector(QVector3D(0, 7, 0))
-                end = start + QPointF(end.x(), end.y())
-                painter.drawEllipse(start, 2, 2)
-                _draw_joint(start, end, 2)  # Adjust scale as needed
-
         # Update rig world positions before drawing
         self.rig.update_position()
-
+        
         self.rig.draw(painter)
-        _draw_rig_bones(self.rig)
+        self.rig.draw_bones(painter)
 
         painter.end()
     
@@ -358,7 +358,7 @@ class DesktopGalaxiary(QWidget):
 if __name__ == "__main__":
     args = {
         'physics_fps': 60,
-        'scale': 0.2
+        'scale': 0.3
     }
     
     app = QApplication(sys.argv)
