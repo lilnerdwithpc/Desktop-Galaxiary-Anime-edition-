@@ -276,7 +276,7 @@ class Rig:
         '''
         def _draw_line(a:QPoint, b:QPoint, scale:int):
             '''
-            Draws a rectangle connecting a and b
+            Draws a line connecting a and b
             '''
             radius = scale // 2
 
